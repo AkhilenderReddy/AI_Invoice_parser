@@ -2,7 +2,7 @@ import os
 import json
 import re
 from dotenv import load_dotenv
-from typing import List, Dict, Optional, Union, Any
+from typing import List, Dict, Optional, Any
 from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
@@ -14,6 +14,7 @@ from PIL import Image
 from io import BytesIO
 from openai import OpenAI
 import logging
+import PyPDF2
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -44,6 +45,7 @@ def get_openai_client() -> OpenAI:
 
 # 1. Define the State (Data Structure)
 class InvoiceData(BaseModel):
+    pdf_content: Optional[str] = Field(default=None, description="Content of the PDF file")
     order_number: Optional[str] = Field(default=None, description="Order number")
     invoice_number: Optional[str] = Field(default=None, description="Invoice number")
     order_date: Optional[str] = Field(default=None, description="Date of the order")
@@ -59,7 +61,6 @@ class InvoiceData(BaseModel):
     buyer_data: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Buyer information")
     items_data: List[Dict[str, Any]] = Field(default_factory=list, description="List of invoice items")
     order_invoice_data: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Order and invoice information")
-    image_base64: Optional[str] = Field(description="Base64 encoded image of the invoice")
 
     @validator('*')
     def set_none_for_empty_string(cls, value: Optional[str]) -> Optional[str]:
@@ -125,109 +126,106 @@ item_schema = [
     ResponseSchema(name="total_amount", description="Total amount for the item"),
 ]
 
-# 3. Define Prompts for Image Input
-def create_order_invoice_prompt() -> ChatPromptTemplate:
-    """Creates the prompt for extracting order and invoice details from an image."""
+# 3. Define Prompts for PDF Input
+def create_order_invoice_pdf_prompt() -> ChatPromptTemplate:
+    """Creates the prompt for extracting order and invoice details from PDF content."""
     return ChatPromptTemplate(
         messages=[
             HumanMessagePromptTemplate.from_template(
                 """
-Extract order and invoice details from the provided image. Provide the response in JSON format, strictly adhering to the schema. If a field is not present, return null.
+Extract order and invoice details from the following text content of a PDF.
+Provide the response in JSON format, strictly adhering to the schema. If a field is not present, return null.
 
 {format_instructions}
-"""
-            ),
-            HumanMessagePromptTemplate.from_template(
-                """
-<image>data:image/jpeg;base64,{image_base64}</image>
+
+Text:
+{pdf_content}
 """
             ),
         ],
-        input_variables=["image_base64"],
+        input_variables=["pdf_content"],
         partial_variables={"format_instructions": StructuredOutputParser.from_response_schemas(order_invoice_schema).get_format_instructions()}
     )
 
-def create_seller_image_prompt() -> ChatPromptTemplate:
-    """Creates the prompt for extracting seller details from an image."""
+def create_seller_pdf_prompt() -> ChatPromptTemplate:
+    """Creates the prompt for extracting seller details from PDF content."""
     return ChatPromptTemplate(
         messages=[
             HumanMessagePromptTemplate.from_template(
                 """
-Extract seller details from the provided image. Provide the response in JSON format, strictly adhering to the schema. If a field is not present, return null.
+Extract seller details from the following text content of a PDF.
+Provide the response in JSON format, strictly adhering to the schema. If a field is not present, return null.
 
 {format_instructions}
-"""
-            ),
-            HumanMessagePromptTemplate.from_template(
-                """
-<image>data:image/jpeg;base64,{image_base64}</image>
+
+Text:
+{pdf_content}
 """
             ),
         ],
-        input_variables=["image_base64"],
+        input_variables=["pdf_content"],
         partial_variables={"format_instructions": StructuredOutputParser.from_response_schemas(seller_schema).get_format_instructions()}
     )
 
-def create_buyer_image_prompt() -> ChatPromptTemplate:
-    """Creates the prompt for extracting buyer details from an image."""
+def create_buyer_pdf_prompt() -> ChatPromptTemplate:
+    """Creates the prompt for extracting buyer details from PDF content."""
     return ChatPromptTemplate(
         messages=[
             HumanMessagePromptTemplate.from_template(
                 """
-Extract buyer details from the provided image. Provide the response in JSON format, strictly adhering to the schema. If a field is not present, return null.
+Extract buyer details from the following text content of a PDF.
+Provide the response in JSON format, strictly adhering to the schema. If a field is not present, return null.
 
 {format_instructions}
-"""
-            ),
-            HumanMessagePromptTemplate.from_template(
-                """
-<image>data:image/jpeg;base64,{image_base64}</image>
+
+Text:
+{pdf_content}
 """
             ),
         ],
-        input_variables=["image_base64"],
+        input_variables=["pdf_content"],
         partial_variables={"format_instructions": StructuredOutputParser.from_response_schemas(buyer_schema).get_format_instructions()}
     )
 
-def create_items_image_prompt() -> ChatPromptTemplate:
-    """Creates the prompt for extracting invoice items details from an image."""
+def create_items_pdf_prompt() -> ChatPromptTemplate:
+    """Creates the prompt for extracting invoice items details from PDF content."""
     return ChatPromptTemplate(
         messages=[
             HumanMessagePromptTemplate.from_template(
                 """
-Extract invoice items and their details from the provided image. Provide the response in JSON format, strictly adhering to the schema. If a field is not present, return null. Ensure that the 'tax' field is a list of tax objects, even if there is only one tax.
+Extract invoice items and their details from the following text content of a PDF.
+Provide the response in JSON format, strictly adhering to the schema. If a field is not present, return null.
+Ensure that the 'tax' field is a list of tax objects, even if there is only one tax.
 
 {format_instructions}
-"""
-            ),
-            HumanMessagePromptTemplate.from_template(
-                """
-<image>data:image/jpeg;base64,{image_base64}</image>
+
+Text:
+{pdf_content}
 """
             ),
         ],
-        input_variables=["image_base64"],
+        input_variables=["pdf_content"],
         partial_variables={"format_instructions": StructuredOutputParser.from_response_schemas(item_schema).get_format_instructions()}
     )
 
-# 4. Define Functions for Agent Actions (Image Input)
-def extract_order_invoice_details_from_image(state: InvoiceData, openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
-    """Extracts order and invoice details from an image."""
+# 4. Define Functions for Agent Actions (PDF Input)
+def extract_order_invoice_details_from_pdf(state: InvoiceData, openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
+    """Extracts order and invoice details from PDF content."""
     model = ChatOpenAI(
         model_name="google/gemma-3-27b-it",
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENAI_API_KEY,
         max_tokens=1000,
     )
-    prompt = create_order_invoice_prompt()
+    prompt = create_order_invoice_pdf_prompt()
     parser = StructuredOutputParser.from_response_schemas(order_invoice_schema)
-    messages = prompt.format_messages(image_base64=state.image_base64)
-    logger.info("Extracting order/invoice details from image.")
-    
+    messages = prompt.format_messages(pdf_content=state.pdf_content)
+    logger.info("Extracting order/invoice details from PDF content.")
+
     try:
         response = model.invoke(messages)
         logger.info(f"Raw LLM response (order/invoice): {response.content}")
-        
+
         # Try to parse the response
         try:
             order_invoice_data = parser.parse(response.content)
@@ -235,7 +233,7 @@ def extract_order_invoice_details_from_image(state: InvoiceData, openai_client: 
         except Exception as parse_error:
             logger.error(f"Error parsing LLM response for order/invoice: {parse_error}")
             order_invoice_data = {}  # Use empty dict if parsing fails
-        
+
         # FIX: Use model_dump() for Pydantic v2 or dict() for v1
         try:
             # Try Pydantic v2 method first
@@ -243,11 +241,11 @@ def extract_order_invoice_details_from_image(state: InvoiceData, openai_client: 
         except AttributeError:
             # Fall back to Pydantic v1 method
             state_dict = state.dict()
-            
+
         return {**state_dict, "order_invoice_data": order_invoice_data}
     except Exception as e:
-        logger.error(f"Error in order/invoice extraction: {e}")
-        
+        logger.error(f"Error in order/invoice extraction from PDF: {e}")
+
         # FIX: Use model_dump() for Pydantic v2 or dict() for v1
         try:
             # Try Pydantic v2 method first
@@ -255,26 +253,26 @@ def extract_order_invoice_details_from_image(state: InvoiceData, openai_client: 
         except AttributeError:
             # Fall back to Pydantic v1 method
             state_dict = state.dict()
-            
+
         return {**state_dict, "order_invoice_data": {}}
 
-def extract_seller_details_from_image(state: InvoiceData, openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
-    """Extracts seller details from an image."""
+def extract_seller_details_from_pdf(state: InvoiceData, openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
+    """Extracts seller details from PDF content."""
     model = ChatOpenAI(
         model_name="google/gemma-3-27b-it",
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENAI_API_KEY,
         max_tokens=3000,
     )
-    prompt = create_seller_image_prompt()
+    prompt = create_seller_pdf_prompt()
     parser = StructuredOutputParser.from_response_schemas(seller_schema)
-    messages = prompt.format_messages(image_base64=state.image_base64)
-    logger.info("Extracting seller details from image.")
-    
+    messages = prompt.format_messages(pdf_content=state.pdf_content)
+    logger.info("Extracting seller details from PDF content.")
+
     try:
         response = model.invoke(messages)
         logger.info(f"Raw LLM response (seller): {response.content}")
-        
+
         # Try to parse the response
         try:
             seller_data = parser.parse(response.content)
@@ -282,7 +280,7 @@ def extract_seller_details_from_image(state: InvoiceData, openai_client: OpenAI 
         except Exception as parse_error:
             logger.error(f"Error parsing LLM response for seller: {parse_error}")
             seller_data = {}  # Use empty dict if parsing fails
-        
+
         # FIX: Use model_dump() for Pydantic v2 or dict() for v1
         try:
             # Try Pydantic v2 method first
@@ -290,11 +288,11 @@ def extract_seller_details_from_image(state: InvoiceData, openai_client: OpenAI 
         except AttributeError:
             # Fall back to Pydantic v1 method
             state_dict = state.dict()
-            
+
         return {**state_dict, "seller_data": seller_data}
     except Exception as e:
-        logger.error(f"Error in seller details extraction: {e}")
-        
+        logger.error(f"Error in seller details extraction from PDF: {e}")
+
         # FIX: Use model_dump() for Pydantic v2 or dict() for v1
         try:
             # Try Pydantic v2 method first
@@ -302,26 +300,26 @@ def extract_seller_details_from_image(state: InvoiceData, openai_client: OpenAI 
         except AttributeError:
             # Fall back to Pydantic v1 method
             state_dict = state.dict()
-            
+
         return {**state_dict, "seller_data": {}}
 
-def extract_buyer_details_from_image(state: InvoiceData, openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
-    """Extracts buyer details from an image."""
+def extract_buyer_details_from_pdf(state: InvoiceData, openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
+    """Extracts buyer details from PDF content."""
     model = ChatOpenAI(
         model_name="google/gemma-3-27b-it",
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENAI_API_KEY,
         max_tokens=3000,
     )
-    prompt = create_buyer_image_prompt()
+    prompt = create_buyer_pdf_prompt()
     parser = StructuredOutputParser.from_response_schemas(buyer_schema)
-    messages = prompt.format_messages(image_base64=state.image_base64)
-    logger.info("Extracting buyer details from image.")
-    
+    messages = prompt.format_messages(pdf_content=state.pdf_content)
+    logger.info("Extracting buyer details from PDF content.")
+
     try:
         response = model.invoke(messages)
         logger.info(f"Raw LLM response (buyer): {response.content}")
-        
+
         # Try to parse the response
         try:
             buyer_data = parser.parse(response.content)
@@ -329,7 +327,7 @@ def extract_buyer_details_from_image(state: InvoiceData, openai_client: OpenAI =
         except Exception as parse_error:
             logger.error(f"Error parsing LLM response for buyer: {parse_error}")
             buyer_data = {}  # Use empty dict if parsing fails
-        
+
         # FIX: Use model_dump() for Pydantic v2 or dict() for v1
         try:
             # Try Pydantic v2 method first
@@ -337,11 +335,11 @@ def extract_buyer_details_from_image(state: InvoiceData, openai_client: OpenAI =
         except AttributeError:
             # Fall back to Pydantic v1 method
             state_dict = state.dict()
-            
+
         return {**state_dict, "buyer_data": buyer_data}
     except Exception as e:
-        logger.error(f"Error in buyer details extraction: {e}")
-        
+        logger.error(f"Error in buyer details extraction from PDF: {e}")
+
         # FIX: Use model_dump() for Pydantic v2 or dict() for v1
         try:
             # Try Pydantic v2 method first
@@ -349,26 +347,26 @@ def extract_buyer_details_from_image(state: InvoiceData, openai_client: OpenAI =
         except AttributeError:
             # Fall back to Pydantic v1 method
             state_dict = state.dict()
-            
+
         return {**state_dict, "buyer_data": {}}
 
-def extract_items_details_from_image(state: InvoiceData, openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
-    """Extracts invoice items details from an image."""
+def extract_items_details_from_pdf(state: InvoiceData, openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
+    """Extracts invoice items details from PDF content."""
     model = ChatOpenAI(
         model_name="google/gemma-3-27b-it",
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENAI_API_KEY,
         max_tokens=3000,
     )
-    prompt = create_items_image_prompt()
+    prompt =create_items_pdf_prompt()
     parser = StructuredOutputParser.from_response_schemas(item_schema)
-    messages = prompt.format_messages(image_base64=state.image_base64)
-    logger.info("Extracting items details from image.")
-    
+    messages = prompt.format_messages(pdf_content=state.pdf_content)
+    logger.info("Extracting items details from PDF content.")
+
     try:
         response = model.invoke(messages)
         logger.info(f"Raw LLM response (items): {response.content}")
-        
+
         # FIX: More robust parsing with better error handling
         try:
             # First check if the response is a list or a single item
@@ -378,11 +376,11 @@ def extract_items_details_from_image(state: InvoiceData, openai_client: OpenAI =
                 content = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
                 if content:
                     content = content.group(1)
-                
+
             # Try to parse as JSON
             try:
                 parsed_json = json.loads(content)
-                
+
                 # Handle both single item and array responses
                 if isinstance(parsed_json, dict):
                     items_data = [parsed_json]  # Wrap single item in list
@@ -397,12 +395,12 @@ def extract_items_details_from_image(state: InvoiceData, openai_client: OpenAI =
                 items_data = parser.parse(content)
                 if not isinstance(items_data, list):
                     items_data = [items_data]
-                    
+
             logger.info(f"Parsed items details: {items_data}")
         except Exception as parse_error:
             logger.error(f"Error parsing LLM response for items: {parse_error}")
             items_data = []  # Use empty list if parsing fails
-        
+
         # FIX: Use model_dump() for Pydantic v2 or dict() for v1
         try:
             # Try Pydantic v2 method first
@@ -410,11 +408,11 @@ def extract_items_details_from_image(state: InvoiceData, openai_client: OpenAI =
         except AttributeError:
             # Fall back to Pydantic v1 method
             state_dict = state.dict()
-            
+
         return {**state_dict, "items_data": items_data}
     except Exception as e:
-        logger.error(f"Error in items details extraction: {e}")
-        
+        logger.error(f"Error in items details extraction from PDF: {e}")
+
         # FIX: Use model_dump() for Pydantic v2 or dict() for v1
         try:
             # Try Pydantic v2 method first
@@ -422,25 +420,25 @@ def extract_items_details_from_image(state: InvoiceData, openai_client: OpenAI =
         except AttributeError:
             # Fall back to Pydantic v1 method
             state_dict = state.dict()
-            
+
         return {**state_dict, "items_data": []}
 
-def combine_results(state: InvoiceData) -> Dict[str, Any]:
-    """Combines the extracted information into the final JSON output."""
-    logger.info("Combining results to produce final output.")
-    
+def combine_results_pdf(state: InvoiceData) -> Dict[str, Any]:
+    """Combines the extracted information from PDF content into the final JSON output."""
+    logger.info("Combining results from PDF content to produce final output.")
+
     # Safely get values from state
     order_invoice_data = getattr(state, "order_invoice_data", {}) or {}
     seller_data = getattr(state, "seller_data", {}) or {}
     buyer_data = getattr(state, "buyer_data", {}) or {}
     items_data = getattr(state, "items_data", []) or []
-    
+
     # For debugging
     logger.info(f"State contains order_invoice_data: {bool(order_invoice_data)}")
     logger.info(f"State contains seller_data: {bool(seller_data)}")
     logger.info(f"State contains buyer_data: {bool(buyer_data)}")
     logger.info(f"State contains items_data: {bool(items_data)}")
-    
+
     # Build the final result object
     final_result = {
         "order_number": order_invoice_data.get("order_number"),
@@ -458,22 +456,22 @@ def combine_results(state: InvoiceData) -> Dict[str, Any]:
         "buyer": buyer_data,
         "invoice_items": items_data,
     }
-    
-    logger.info(f"Final result: {final_result}")
-    
-    # Explicitly remove the image_base64 field from the result
-    return {"result": final_result}
 
-# 5. Define the Graph for Image Input
-def create_image_graph() -> StateGraph:
-    """Creates the LangGraph graph for image input."""
+    logger.info(f"Final result from PDF: {final_result}")
+
+    # return {"result": final_result}
+    return final_result
+
+# 5. Define the Graph for PDF Input
+def create_pdf_graph() -> StateGraph:
+    """Creates the LangGraph graph for PDF input."""
     graph_builder = StateGraph(InvoiceData)
 
-    graph_builder.add_node("extract_order_invoice_details", extract_order_invoice_details_from_image)
-    graph_builder.add_node("extract_seller_details", extract_seller_details_from_image)
-    graph_builder.add_node("extract_buyer_details", extract_buyer_details_from_image)
-    graph_builder.add_node("extract_items_details", extract_items_details_from_image)
-    graph_builder.add_node("combine_results", combine_results)
+    graph_builder.add_node("extract_order_invoice_details", extract_order_invoice_details_from_pdf)
+    graph_builder.add_node("extract_seller_details", extract_seller_details_from_pdf)
+    graph_builder.add_node("extract_buyer_details", extract_buyer_details_from_pdf)
+    graph_builder.add_node("extract_items_details", extract_items_details_from_pdf)
+    graph_builder.add_node("combine_results", combine_results_pdf)
 
     graph_builder.set_entry_point("extract_order_invoice_details")
     graph_builder.add_edge("extract_order_invoice_details", "extract_seller_details")
@@ -487,44 +485,54 @@ def create_image_graph() -> StateGraph:
 # Create FastAPI app
 app = FastAPI()
 
-# Define the FastAPI endpoint
-@app.post("/extract_invoice_data/")
-async def upload_image(file: UploadFile = File(...), openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
+# Define the FastAPI endpoint for PDF processing
+# Define the FastAPI endpoint for PDF processing
+# Define the FastAPI endpoint for PDF processing
+@app.post("/extract_invoice_data_pdf/")
+async def upload_pdf(file: UploadFile = File(...), openai_client: OpenAI = Depends(get_openai_client)) -> Dict[str, Any]:
     """
-    Endpoint to upload an image and extract invoice data using LangGraph.
+    Endpoint to upload a PDF and extract invoice data using LangGraph.
     """
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
+    if not file.content_type == "application/pdf":
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a PDF file.")
 
     try:
-        # Read the image file
-        image_bytes = await file.read()
-        
-        # Create the graph
-        graph = create_image_graph()
-        
-        # Encode image to base64
-        base64_image = base64.b64encode(image_bytes).decode("utf-8")
-        
-        # Initialize InvoiceData with image_base64
-        initial_state = InvoiceData(image_base64=base64_image)
-        logger.info("Processing image through the extraction pipeline...")
-        
+        pdf_content = ""
+        pdf_reader = PyPDF2.PdfReader(file.file)
+        for page_num in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[page_num]
+            pdf_content += page.extract_text()
+
+        if not pdf_content.strip():
+            raise HTTPException(status_code=400, detail="The uploaded PDF file is empty or contains no readable text.")
+
+        # Create the graph for PDF processing
+        graph = create_pdf_graph()
+
+        # Initialize InvoiceData with pdf_content
+        initial_state = InvoiceData(pdf_content=pdf_content)
+        logger.info("Processing PDF content through the extraction pipeline...")
+
         # Execute the graph
-        final_state = graph.invoke(initial_state)
-        logger.info("Graph execution completed")
-        
-        # Check if result is in the final state
-        if "result" in final_state:
-            result = final_state["result"]
-            logger.info("Successfully extracted invoice data")
-            return result
-        else:
-            error_msg = "Processing completed but no result field was found in the output"
-            logger.error(error_msg)
-            raise HTTPException(status_code=500, detail=error_msg)
-            
+        final_state = await graph.ainvoke(initial_state)
+
+        logger.info(f"Final state after graph execution for PDF: {final_state}")  # Log the entire final state
+
+        return final_state
+        # if "combine_results" in final_state:
+        #     result = final_state
+        #     logger.info("Successfully extracted invoice data from PDF")
+        #     return result
+        # else:
+        #     error_msg = "Processing completed but the 'combine_results' output was not found in the final state for PDF"
+        #     logger.error(error_msg)
+        #     raise HTTPException(status_code=500, detail=error_msg)
+
+    except PyPDF2.errors.PdfReadError:
+        error_msg = "Error reading the PDF file. It might be corrupted or not a valid PDF."
+        logger.error(error_msg)
+        raise HTTPException(status_code=400, detail=error_msg)
     except Exception as e:
-        error_msg = f"An error occurred during image processing: {str(e)}"
+        error_msg = f"An error occurred during PDF processing: {str(e)}"
         logger.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
