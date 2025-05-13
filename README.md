@@ -1,6 +1,4 @@
-# AI_Invoice_parser
-AI_Invoice_parser
-# Invoice Data Extraction API
+# AI Invoice Parser API
 
 This project provides an API endpoint to extract structured data from invoice documents (currently supporting PDF files). It leverages LangGraph and OpenAI (via OpenRouter) to intelligently parse and extract information such as order details, seller and buyer information, and individual invoice items.
 
