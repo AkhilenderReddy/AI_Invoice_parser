@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+langchain
+openai
+python-dotenv
+pydantic
+Pillow
+PyPDF2
