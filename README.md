@@ -22,8 +22,6 @@ This project provides an API endpoint to extract structured data from invoice do
 - **Input:** [Image.png](Sample%20Input/Image.png)
 - **Output:** [Image_output.json](Sample%20Output/Image_output.json)
 
----
-
 ### 📄 PDF Input & Output
 - **Input:** [Amazone22.pdf](Sample%20Input/Amazone22.pdf)
 - **Output:** [pdf_output.json](Sample%20Output/pdf_output.json)
