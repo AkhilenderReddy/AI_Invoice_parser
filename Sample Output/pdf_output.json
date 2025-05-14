@@ -1,0 +1,121 @@
+{
+    "pdf_content": " Tax Invoice/Bill of Supply/Cash Memo\n(Original for Recipient)\n*ASSPL-Amazon Seller Services Pvt. Ltd., ARIPL-Amazon Retail India Pvt. Ltd. (only where Amazon Retail India Pvt. Ltd. fulfillment center is co-located) \nPlease note that this invoice is not a demand for payment\nPage 1 of 2Order Number:  405-3220527-8189924 Invoice Number :  BLR8-1438\nOrder Date:  11.03.2024 Invoice Details :  KA-BLR8-179022581-2324\nInvoice Date :  11.03.2024\nSl.\nNoDescriptionUnit\nPriceDiscount QtyNet\nAmountTax\nRateTax\nTypeTax\nAmountTotal\nAmount\n1FowWelt Whiteboard (60x200cm) Sticker Wall\nDecal,Self-Adhesive White Board Sticker Vinyl Peel and\nStick Paper for School, Office, Home, Kids Drawing with\n1 Marker (60X200 CM, White) | B09BNV3XMC (\nPW-SKJJ-DCVR ) \nHSN:4820₹349.72-₹13.993₹1,007.199%CGST₹90.63₹1,188.45\n9%SGST₹90.63\nFowWelt Whiteboard (60x200cm) Sticker Wall\nDecal,Self-Adhesive White Board Sticker Vinyl Peel and\nStick Paper for School, Office, Home, Kids Drawing with\n1 Marker (60X200 CM, White) | B09BNV3XMC (\nPW-SKJJ-DCVR ) \nHSN:4820₹349.72-₹13.991₹335.739%CGST₹30.21₹396.15\n9%SGST₹30.21\nFowWelt Whiteboard (60x200cm) Sticker Wall\nDecal,Self-Adhesive White Board Sticker Vinyl Peel and\nStick Paper for School, Office, Home, Kids Drawing with\n1 Marker (60X200 CM, White) | B09BNV3XMC (\nPW-SKJJ-DCVR ) \nHSN:4820₹349.72-₹13.982₹671.489%CGST₹60.42₹792.32\n9%SGST₹60.42\nTOTAL: ₹362.52₹2,376.92Sold By :\nBUYERS ADDA \n* Building 2 ( Wh 2), Plot no. 12/P2 (IT Sector),\nHitech, Defence and Aerospace Park, Devanahalli\nBengaluru, Karnataka, 562149\nIN\nPAN No: CTQPR7316K\nGST Registration No: 29CTQPR7316K1ZRBilling Address :\nBenplat EPP Technology Private Limited\nBhive, 27th Main road, sector 2, Hsr layout\nBengaluru, KA, 560102\nIN\nGST Registration No: 29AALCB9215G1ZF\nState/UT Code: 29\nShipping Address :\nBenplat EPP Technology Private Limited \nRuma Debnath\nBhive Workspace, 27th Main Road,, Sector 2,\nHSR Layout, Bengaluru\nBENGALURU, KARNATAKA, 560102\nIN\nState/UT Code: 29 \nGST Registration No: 29AALCB9215G1ZF\nPlace of supply: KA\nPlace of delivery: KARNATAKA Tax Invoice/Bill of Supply/Cash Memo\n(Original for Recipient)\n*ASSPL-Amazon Seller Services Pvt. Ltd., ARIPL-Amazon Retail India Pvt. Ltd. (only where Amazon Retail India Pvt. Ltd. fulfillment center is co-located) \nPlease note that this invoice is not a demand for payment\nPage 2 of 2For BUYERS ADDA:\nAuthorized Signatory\nAmount in Words:\nTwo Thousand Three Hundred Seventy-six Point Nine Two only\nWhether tax is payable under reverse charge - No",
+    "order_number": "405-3220527-8189924",
+    "invoice_number": "BLR8-1438",
+    "order_date": "11.03.2024",
+    "invoice_id": "KA-BLR8-179022581-2324",
+    "invoice_date": "11.03.2024",
+    "transaction_id": null,
+    "date_time": null,
+    "invoice_value": "2,376.92",
+    "mode_of_payment": null,
+    "place_of_supply": "KA",
+    "place_of_delivery": "KARNATAKA",
+    "seller_data": {
+        "name": "BUYERS ADDA",
+        "gst": "29CTQPR7316K1Z",
+        "pan": "CTQPR7316K",
+        "address": "Building 2 ( Wh 2), Plot no. 12/P2 (IT Sector), Hitech, Defence and Aerospace Park, Devanahalli Bengaluru, Karnataka, 562149",
+        "state": "Karnataka",
+        "pincode": "562149",
+        "country": "IN",
+        "account_name": null,
+        "account_number": null,
+        "bank_name": null,
+        "branch": null,
+        "ifsc": null,
+        "phone": null,
+        "email": null
+    },
+    "buyer_data": {
+        "name": "Benplat EPP Technology Private Limited",
+        "gst": "29AALCB9215G1ZF",
+        "pan": null,
+        "address": "Bhive, 27th Main road, sector 2, Hsr layout Bengaluru, KA, 560102 IN",
+        "state": "KARNATAKA",
+        "pincode": "560102",
+        "country": "IN",
+        "email": null,
+        "phone": null,
+        "billing_address": "Benplat EPP Technology Private Limited\nBhive, 27th Main road, sector 2, Hsr layout\nBengaluru, KA, 560102\nIN",
+        "shipping_address": "Benplat EPP Technology Private Limited \nRuma Debnath\nBhive Workspace, 27th Main Road,, Sector 2,\nHSR Layout, Bengaluru\nBENGALURU, KARNATAKA, 560102\nIN"
+    },
+    "items_data": [
+        {
+            "sl_no": "1",
+            "hsn": "4820",
+            "description": "FowWelt Whiteboard (60x200cm) Sticker Wall Decal,Self-Adhesive White Board Sticker Vinyl Peel and Stick Paper for School, Office, Home, Kids Drawing with 1 Marker (60X200 CM, White) | B09BNV3XMC ( PW-SKJJ-DCVR )",
+            "unit_price": "349.72",
+            "qty": "3",
+            "net_amount": "1,007.19",
+            "tax": [
+                {
+                    "rate": "9%",
+                    "type": "CGST",
+                    "amount": "90.63"
+                },
+                {
+                    "rate": "9%",
+                    "type": "SGST",
+                    "amount": "90.63"
+                }
+            ],
+            "total_amount": "1,188.45"
+        },
+        {
+            "sl_no": "1",
+            "hsn": "4820",
+            "description": "FowWelt Whiteboard (60x200cm) Sticker Wall Decal,Self-Adhesive White Board Sticker Vinyl Peel and Stick Paper for School, Office, Home, Kids Drawing with 1 Marker (60X200 CM, White) | B09BNV3XMC ( PW-SKJJ-DCVR )",
+            "unit_price": "349.72",
+            "qty": "1",
+            "net_amount": "335.73",
+            "tax": [
+                {
+                    "rate": "9%",
+                    "type": "CGST",
+                    "amount": "30.21"
+                },
+                {
+                    "rate": "9%",
+                    "type": "SGST",
+                    "amount": "30.21"
+                }
+            ],
+            "total_amount": "396.15"
+        },
+        {
+            "sl_no": "1",
+            "hsn": "4820",
+            "description": "FowWelt Whiteboard (60x200cm) Sticker Wall Decal,Self-Adhesive White Board Sticker Vinyl Peel and Stick Paper for School, Office, Home, Kids Drawing with 1 Marker (60X200 CM, White) | B09BNV3XMC ( PW-SKJJ-DCVR )",
+            "unit_price": "349.72",
+            "qty": "2",
+            "net_amount": "671.48",
+            "tax": [
+                {
+                    "rate": "9%",
+                    "type": "CGST",
+                    "amount": "60.42"
+                },
+                {
+                    "rate": "9%",
+                    "type": "SGST",
+                    "amount": "60.42"
+                }
+            ],
+            "total_amount": "792.32"
+        }
+    ],
+    "order_invoice_data": {
+        "order_number": "405-3220527-8189924",
+        "invoice_number": "BLR8-1438",
+        "order_date": "11.03.2024",
+        "invoice_id": "KA-BLR8-179022581-2324",
+        "invoice_date": "11.03.2024",
+        "transaction_id": null,
+        "date_time": null,
+        "invoice_value": "2,376.92",
+        "mode_of_payment": null,
+        "place_of_supply": "KA",
+        "place_of_delivery": "KARNATAKA"
+    }
+}
