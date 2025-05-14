@@ -1,0 +1,66 @@
+{
+    "order_number": "1148798055321600",
+    "invoice_number": "PAAXV9101383809",
+    "order_date": "07-03-2019",
+    "invoice_id": null,
+    "invoice_date": "08-03-2019",
+    "transaction_id": null,
+    "date_time": null,
+    "invoice_value": "10624.00",
+    "mode_of_payment": null,
+    "place_of_supply": "NEW DELHI 110016 Delhi",
+    "place_of_delivery": "NEW DELHI 110016 Delhi",
+    "seller": {
+        "name": "Shreyash Retail Private Limited",
+        "gst": "36AAXCS055F1ZZ",
+        "pan": "aaxcs06551",
+        "address": "59 & 60, Gandhinagar, Miyapur Village, Medchal Mandal, Ranga Reddy Dist., Secunderabad - Telangana, 500039, IN",
+        "state": "Telangana",
+        "pincode": "500039",
+        "country": "IN",
+        "bank_details": {
+            "account_name": null,
+            "account_number": null,
+            "bank_name": null,
+            "branch": null,
+            "ifsc": null
+        },
+        "contact_details": {
+            "phone": "9136662913",
+            "email": null
+        }
+    },
+    "buyer": {
+        "name": "Ajay Kumar",
+        "gst": null,
+        "pan": null,
+        "address": "210, Unimet profile Pvt Ltd. 2nd floor, Ashirwad Complex, Green park, NEW DELHI 110016 Delhi",
+        "state": "Delhi",
+        "pincode": "110016",
+        "country": null,
+        "contact_details": {
+            "email": null,
+            "phone": "9136662913"
+        },
+        "billing_address": null,
+        "shipping_address": null
+    },
+    "invoice_items": [
+        {
+            "sl.no": "1",
+            "hsn": "85171290",
+            "description": "Redmi Note 6 Pro Black, 64 GB\nWarranty: Brand Warranty of 1 Year Available for\nMobile and 6 Months for Accessories\nIMEI/Serial No: 861478046529497\nIncludes No Cost EMI Program Discount of\nRs 375.0\nIGST: 12.000 %",
+            "unit_price": "10999.00",
+            "qty": "1",
+            "net_amount": "9485.71",
+            "tax": [
+                {
+                    "tax_type": "IGST",
+                    "tax_rate": null,
+                    "tax_amount": "1138.28"
+                }
+            ],
+            "total_amount": "10624.00"
+        }
+    ]
+}
